@@ -1,15 +1,19 @@
+import ssl
 import asyncio
 import websockets
 
-async def hello():
-    async with websockets.connect('ws://localhost:8765') as websocket:
-        name = input('What\'s your name? ')
-        await websocket.send(name)
-        print('> {}'.format(name))
+ssl_context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
+ssl_context.check_hostname = False
+ssl_context.verify_mode = ssl.CERT_NONE
+ssl_context.load_verify_locations('super-site.com.cert')
 
-        greeting = await websocket.recv()
+
+async def hello(uri):
+    async with websockets.connect(uri, ssl=ssl_context) as websocket:
+        await websocket.send('{"up_id":322}')
+        greeting = await  websocket.recv()
         print('< {}'.format(greeting))
 
-if __name__ == '__main__':
-    print('Hello im ws client')
-    asyncio.get_event_loop().run_until_complete(hello())
+
+loop = asyncio.get_event_loop()
+loop.run_until_complete(hello('wss://dev-onli.getpackage.com'))

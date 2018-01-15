@@ -1,21 +1,29 @@
+import ssl
 import asyncio
 import websockets
 
 
 async def hello(websocket, path):
-    # Here’s a WebSocket server example. It reads a name from the client,
-    # sends a greeting, and closes the connection.
     name = await websocket.recv()
-    print('< {}'.format(name))
+    print("< {}".format(name))
 
-    greeting = 'Hello {}!'.format(name)
-    await  websocket.send(greeting)
-    print('> {}'.format(greeting))
+    greeting = "Hello {}!".format(name)
+    await websocket.send(greeting)
+    print("> {}".format(greeting))
 
+ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+ssl_context.check_hostname = False
+ssl_context.load_cert_chain('super-site.com.cert', 'super-site.com.key')
 
-if __name__ == '__main__':
-    print('Hello im ws server')
-    start_server = websockets.serve(hello, 'localhost', 8765)
+start_server = websockets.serve(hello, 'localhost', 8999, ssl=ssl_context)
 
-    asyncio.get_event_loop().run_until_complete(start_server)
-    asyncio.get_event_loop().run_forever()
+loop = asyncio.get_event_loop()
+print('>>> RUN <<<')
+loop.run_until_complete(start_server)
+
+try:
+    loop.run_forever()
+except KeyboardInterrupt as e:
+    loop.run_until_complete(start_server.wait_closed())
+finally:
+    loop.close()
